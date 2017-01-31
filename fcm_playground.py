@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#TODO Clicks außerhalb des Wertebereichs behandeln!
 
 import tkinter as tk
 from tkinter import ttk
@@ -33,7 +32,8 @@ class MainApp(tk.Tk):
 
         self.plotArea = PlotArea(self, padding="3 3 12 12")
         self.plotArea.grid(column=10, row=5, sticky="nsew")
-        self.plotArea.canvas.mpl_connect('button_press_event', self.addDataAtClick)
+        self.plotArea.canvas.mpl_connect('button_press_event', self.onClick)
+        self.plotArea.canvas.mpl_connect('pick_event', self.onPick)
 
         self.columnconfigure(10, weight=1)
         self.rowconfigure(5, weight=1)
@@ -63,8 +63,8 @@ class MainApp(tk.Tk):
         self.xData, self.yData = np.loadtxt(self.filePath).tolist()
         self.plotArea.redraw()
 
-    def addDataAtClick(self, event):
-        """Handle clicks into the plot area. When left mouse button is clicked,
+    def onClick(self, event):
+        """Handle clicks in the plot area. When left mouse button is clicked,
         the point is added to xData, yData and shown in the plot.
         """
         if (event.button == 1 and event.xdata is not None and
@@ -72,6 +72,11 @@ class MainApp(tk.Tk):
             self.xData.append(event.xdata)
             self.yData.append(event.ydata)
             self.plotArea.redraw()
+
+    def onPick(self, event):
+        """Handle pick events"""
+        if event.mouseevent.button == 3:
+            print("Du picker, du!")
 
     def resetData(self):
         """Initializes xData, yData with empty lists and redraws the plot."""
@@ -108,9 +113,8 @@ class PlotArea(ttk.Frame):
 
         self.figure = Figure(figsize=(6, 6))
         self.subplot = self.figure.add_subplot(111)
-        self.plot = self.subplot.scatter(master.xData, master.yData, alpha=0.5)
-        self.subplot.axis([0, 1, 0, 1])
         self.canvas = FigureCanvasTkAgg(self.figure, self)
+        self.redraw()
         self.canvas.show()
         self.canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.toolbar = NavigationToolbar2TkAgg(self.canvas, self)
@@ -120,7 +124,7 @@ class PlotArea(ttk.Frame):
     def redraw(self):
         """Update shown graph after master's xData, yData changed."""
         self.subplot.clear()
-        self.plot = self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5)
+        self.plot = self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5, picker=5)
         if (not self.master.xData or not self.master.yData or
             (max(self.master.xData) <= 1 and max(self.master.yData) <= 1)):
             self.subplot.axis([0, 1, 0, 1])
