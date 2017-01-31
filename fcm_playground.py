@@ -74,9 +74,19 @@ class MainApp(tk.Tk):
             self.plotArea.redraw()
 
     def onPick(self, event):
-        """Handle pick events"""
+        """Handle pick events. If there is a mousebutton3-click on a data point
+        it will be removed from the dataset
+        """
         if event.mouseevent.button == 3:
-            print("Du picker, du!")
+            xMouse = event.mouseevent.xdata
+            yMouse = event.mouseevent.ydata
+            distances = [((xMouse-x)**2+(yMouse-y)**2)**0.5 for (x, y) in zip(self.xData, self.yData)]
+            index = distances.index(min(distances))
+            del self.xData[index]
+            del self.yData[index]
+            self.plotArea.redraw()
+
+
 
     def resetData(self):
         """Initializes xData, yData with empty lists and redraws the plot."""
@@ -124,7 +134,7 @@ class PlotArea(ttk.Frame):
     def redraw(self):
         """Update shown graph after master's xData, yData changed."""
         self.subplot.clear()
-        self.plot = self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5, picker=5)
+        self.plot = self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5, picker=3)
         if (not self.master.xData or not self.master.yData or
             (max(self.master.xData) <= 1 and max(self.master.yData) <= 1)):
             self.subplot.axis([0, 1, 0, 1])
