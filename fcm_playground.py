@@ -9,7 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 
 import numpy as np
-import os
+import sys
 
 class MainApp(tk.Tk):
     """The controller of data and window contents."""
@@ -19,8 +19,8 @@ class MainApp(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         self.title("Isodata Fuzzy-C-Means playground")
 
-        self.xData = []
-        self.yData = []
+        self.xData = list(np.random.rand(50))
+        self.yData = list(np.random.rand(50))
         self.filePath = ""
 
         self.sidepane = Sidepane(self, padding="3 3 12 12")
@@ -62,6 +62,7 @@ class MainApp(tk.Tk):
         self.filePath = tk.filedialog.askopenfilename(initialdir=self.filePath, parent=self)
         self.xData, self.yData = np.loadtxt(self.filePath).tolist()
         self.plotArea.redraw()
+        self.sidepane.update()
 
     def onClick(self, event):
         """Handle clicks in the plot area. When left mouse button is clicked,
@@ -72,6 +73,7 @@ class MainApp(tk.Tk):
             self.xData.append(event.xdata)
             self.yData.append(event.ydata)
             self.plotArea.redraw()
+            self.sidepane.update()
 
     def onPick(self, event):
         """Handle pick events. If there is a mousebutton3-click on a data point
@@ -85,34 +87,81 @@ class MainApp(tk.Tk):
             del self.xData[index]
             del self.yData[index]
             self.plotArea.redraw()
-
-
+            self.sidepane.update()
 
     def resetData(self):
         """Initializes xData, yData with empty lists and redraws the plot."""
         self.xData = []
         self.yData = []
         self.plotArea.redraw()
+        self.sidepane.update()
+
+    def fcm(self):
+        pass
+
 
 class Sidepane(ttk.Frame):
-    """Contains all the buttons to control the application but whithout any
-    functions.
+    """Contains all the buttons to control the application whithout any
+    functionality.
     """
     def __init__(self, master, *args, **kwargs):
         """Build the interface."""
         self.master = master
         ttk.Frame.__init__(self, master, *args, **kwargs)
 
-        self.loadButton = ttk.Button(self, text="Load Data...")
-        self.loadButton.grid(column=5, row=5, sticky="nsew")
         self.saveButton = ttk.Button(self, text="Save Data")
-        self.saveButton.grid(column=10, row=5, sticky="nsew")
+        self.saveButton.grid(column=5, row=5, sticky="nsew")
         self.saveAsButton = ttk.Button(self, text="Save as...")
-        self.saveAsButton.grid(column=15, row=5, sticky="nsew")
+        self.saveAsButton.grid(column=10, row=5, sticky="nsew")
+        self.loadButton = ttk.Button(self, text="Load Data...")
+        self.loadButton.grid(column=5, row=10, sticky="nsew")
         self.resetButton = ttk.Button(self, text="Reset Data")
-        self.resetButton.grid(column=5, row=10, sticky="nsew")
+        self.resetButton.grid(column=10, row=10, sticky="nsew")
 
-        for child in self.winfo_children(): child.grid_configure(padx=2, pady=2)
+        divider = ttk.Separator(self, orient=tk.HORIZONTAL)
+        divider.grid(column=5, row=15, columnspan=6, sticky="nsew")
+
+        randDataDesc = ttk.Label(self, text="Create x random Datapoints:")
+        randDataDesc.grid(column=5, row=16, columnspan=10, sticky="nsew")
+        self.numRandData = tk.IntVar()
+        self.numRandData.set(500)
+        numRandDataChooser = tk.Spinbox(self, from_=1, to=sys.maxsize, textvariable=self.numRandData)
+        numRandDataChooser.grid(column=5, row=17, sticky="nsew")
+        self.randDataButton = ttk.Button(self, text="Randomize Data!")
+        self.randDataButton.grid(column=10, row=17, sticky="nsew")
+
+        divider = ttk.Separator(self, orient=tk.HORIZONTAL)
+        divider.grid(column=5, row=18, columnspan=6, sticky="nsew")
+
+        numClusterDesc = ttk.Label(self, text="Number of clusters:")
+        numClusterDesc.grid(column=5, row=20, columnspan=5, sticky="nsew")
+        self.numClusterChooser = tk.Spinbox(self, from_=2, to=max(2, len(self.master.xData)))
+        self.numClusterChooser.grid(column=5, row=21, sticky="nsw")
+
+        contrastDesc = ttk.Label(self, text="Set cluster contrast variable:")
+        contrastDesc.grid(column=5, row=24, columnspan=5, sticky="nsew")
+        self.contrast = tk.DoubleVar()
+        contrastChooser = ttk.Scale(self, from_=1, to=1000, variable=self.contrast)
+        contrastChooser.grid(column=5, row=26, sticky="nsew")
+        contrastDisplay = ttk.Label(self, textvariable=self.contrast, width=5)
+        contrastDisplay.grid(column=10, row = 26, sticky="w")
+
+        truncErrDesc = ttk.Label(self, text="Set truncation error:")
+        truncErrDesc.grid(column=5, row=30, columnspan=1, sticky="nsew")
+        self.truncErr = tk.DoubleVar()
+        truncErrChooser = ttk.Scale(self, to=0.7, variable=self.truncErr)
+        truncErrChooser.grid(column=5, row=31, sticky="nsew")
+        truncErrDisplay = ttk.Label(self, textvariable=self.truncErr, width=5)
+        truncErrDisplay.grid(column=10, row = 31, sticky="w")
+
+        self.startFCMButton = ttk.Button(self, text="Calc Clusters")
+        self.startFCMButton.grid(column=5, row=35, columnspan=10, sticky="nsew")
+
+        for child in self.winfo_children(): child.grid_configure(padx=2, pady=5)
+        #divider.grid_configure(pady=10)
+
+    def update(self):
+        self.numClusterChooser.config(to=max(2, len(self.master.xData)))
 
 class PlotArea(ttk.Frame):
     """Contains the area with the data visualization, provided by matplotlib."""
