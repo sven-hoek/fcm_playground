@@ -9,7 +9,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 
 import numpy as np
-import sys
 
 class MainApp(tk.Tk):
     """The controller of data and window contents."""
@@ -29,6 +28,8 @@ class MainApp(tk.Tk):
         self.sidepane.saveButton.config(command=self.saveData)
         self.sidepane.saveAsButton.config(command=self.saveDataAs)
         self.sidepane.resetButton.config(command=self.resetData)
+        self.sidepane.randDataButton.config(command=self.randomizeData)
+        self.sidepane.numRandDataChooser.bind("<Return>", self.randomizeData)
 
         self.plotArea = PlotArea(self, padding="3 3 12 12")
         self.plotArea.grid(column=10, row=5, sticky="nsew")
@@ -56,7 +57,7 @@ class MainApp(tk.Tk):
             np.savetxt(self.filePath, (self.xData, self.yData))
 
     def loadData(self, *args):
-        """Open dialog to select a fila and load its content in to xData and
+        """Open dialog to select a file and load its content in to xData and
         yData when possible
         """
         self.filePath = tk.filedialog.askopenfilename(initialdir=self.filePath, parent=self)
@@ -96,9 +97,26 @@ class MainApp(tk.Tk):
         self.plotArea.redraw()
         self.sidepane.update()
 
-    def fcm(self):
-        pass
+    def randomizeData(self, *args):
+        """Fill the list of datapoints with random data. The number of points
+        is determined by the spinbox from the sidepane. Even though there's a
+        max limit to the box you can enter higher numbers than the limit. That's
+        why there's another limit in this method (double as high).
+        """
+        self.xData = list(np.random.rand(min(self.sidepane.numRandData.get(), 10000)))
+        self.yData = list(np.random.rand(min(self.sidepane.numRandData.get(), 10000)))
+        self.plotArea.redraw()
+        self.sidepane.update()
 
+class FCM():
+    """Implements the Fuzzy-C-Means algorithm."""
+    def __init__(self, xData=[], yData=[], numCluster=2, contrast=1, truncErr=0.5):
+        """Constructor. (No input checking!)"""
+        self.xData = xData
+        self.yData = yData
+        self.numCluster = numCluster
+        self.contrast = contrast
+        self.truncErr = truncErr
 
 class Sidepane(ttk.Frame):
     """Contains all the buttons to control the application whithout any
@@ -119,27 +137,27 @@ class Sidepane(ttk.Frame):
         self.resetButton.grid(column=10, row=10, sticky="nsew")
 
         divider = ttk.Separator(self, orient=tk.HORIZONTAL)
-        divider.grid(column=5, row=15, columnspan=6, sticky="nsew")
+        divider.grid(column=5, row=15, columnspan=10, sticky="nsew")
 
         randDataDesc = ttk.Label(self, text="Create x random Datapoints:")
         randDataDesc.grid(column=5, row=16, columnspan=10, sticky="nsew")
         self.numRandData = tk.IntVar()
         self.numRandData.set(500)
-        numRandDataChooser = tk.Spinbox(self, from_=1, to=sys.maxsize, textvariable=self.numRandData)
-        numRandDataChooser.grid(column=5, row=17, sticky="nsew")
+        self.numRandDataChooser = tk.Spinbox(self, from_=1, to=5000, textvariable=self.numRandData)
+        self.numRandDataChooser.grid(column=5, row=17, sticky="nsew")
         self.randDataButton = ttk.Button(self, text="Randomize Data!")
         self.randDataButton.grid(column=10, row=17, sticky="nsew")
 
         divider = ttk.Separator(self, orient=tk.HORIZONTAL)
-        divider.grid(column=5, row=18, columnspan=6, sticky="nsew")
+        divider.grid(column=5, row=18, columnspan=10, sticky="nsew")
 
         numClusterDesc = ttk.Label(self, text="Number of clusters:")
-        numClusterDesc.grid(column=5, row=20, columnspan=5, sticky="nsew")
+        numClusterDesc.grid(column=5, row=20, sticky="nsew")
         self.numClusterChooser = tk.Spinbox(self, from_=2, to=max(2, len(self.master.xData)))
         self.numClusterChooser.grid(column=5, row=21, sticky="nsw")
 
         contrastDesc = ttk.Label(self, text="Set cluster contrast variable:")
-        contrastDesc.grid(column=5, row=24, columnspan=5, sticky="nsew")
+        contrastDesc.grid(column=5, row=24, sticky="nsew")
         self.contrast = tk.DoubleVar()
         contrastChooser = ttk.Scale(self, from_=1, to=1000, variable=self.contrast)
         contrastChooser.grid(column=5, row=26, sticky="nsew")
@@ -147,7 +165,7 @@ class Sidepane(ttk.Frame):
         contrastDisplay.grid(column=10, row = 26, sticky="w")
 
         truncErrDesc = ttk.Label(self, text="Set truncation error:")
-        truncErrDesc.grid(column=5, row=30, columnspan=1, sticky="nsew")
+        truncErrDesc.grid(column=5, row=30, sticky="nsew")
         self.truncErr = tk.DoubleVar()
         truncErrChooser = ttk.Scale(self, to=0.7, variable=self.truncErr)
         truncErrChooser.grid(column=5, row=31, sticky="nsew")
@@ -158,7 +176,6 @@ class Sidepane(ttk.Frame):
         self.startFCMButton.grid(column=5, row=35, columnspan=10, sticky="nsew")
 
         for child in self.winfo_children(): child.grid_configure(padx=2, pady=5)
-        #divider.grid_configure(pady=10)
 
     def update(self):
         self.numClusterChooser.config(to=max(2, len(self.master.xData)))
