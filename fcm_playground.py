@@ -109,17 +109,32 @@ class MainApp(tk.Tk):
         self.sidepane.update()
 
 class FCM():
-    """Implements the Fuzzy-C-Means algorithm."""
+    """Implements the Fuzzy-C-Means algorithm for 2D data. Uses no data
+    encapsulation or anything fancy (like the very fancy act of checking
+    parameters).
+
+    Note: i denotes the index determining the data point, j the one determining
+    the cluster.
+    """
     def __init__(self, xData=[], yData=[], numCluster=2, contrast=1, truncErr=0.5):
-        """Constructor. (No input checking!)"""
+        """Initialization."""
         self.xData = xData
         self.yData = yData
         self.numCluster = numCluster
         self.contrast = contrast
         self.truncErr = truncErr
+        self.membershipVals = np.random.rand(len(xData), numCluster)
+        for i in range(self.membershipVals.shape[0]):
+            self.membershipVals[i] = self.normalized(self.membershipVals[i])
+        #self.lastMembershipVals = np.zeros(self.membershipVals.shape)
+
+    def normalized(self, vec):
+        """Normalizes values in a list so that the sum of all values equals ~1"""
+        s = vec.sum()
+        return np.array([float(vec[j])/s for j in range(vec.shape[0])])
 
 class Sidepane(ttk.Frame):
-    """Contains all the buttons to control the application whithout any
+    """Contains all the buttons whithout any
     functionality.
     """
     def __init__(self, master, *args, **kwargs):
@@ -207,8 +222,9 @@ class PlotArea(ttk.Frame):
         self.canvas.show()
 
 def main():
-    """Function to call when module runs as own application."""
+    """Function to call when module runs as main application."""
     mainApp = MainApp()
+    #fcmTest = FCM(mainApp.xData, mainApp.yData)
     mainApp.mainloop()
 
 if __name__ == '__main__':
