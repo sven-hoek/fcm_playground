@@ -139,7 +139,6 @@ class FCM():
         self.distances = np.empty((len(xData), numCluster))
         for i in range(self.affiliations.shape[0]):
             self.affiliations[i] = self.normalized(self.affiliations[i])
-        #self.lastMembershipVals = np.zeros(self.affiliations.shape)
 
     def normalized(self, vec):
         """Normalizes values in a list/vector so that the sum of all values equals ~1"""
@@ -194,14 +193,6 @@ class FCM():
                 if maxDistI > maxDist:
                     maxDist = maxDistI
                 self.distances[i] = newVec
-                # for j in range(0, len(self.affiliations[i])):
-                #     newVal = 0
-                #     for dist in self.distances[i]:
-                #         newVal += (self.distances[i][j]/dist)**exponent
-                #     newVal = 1/newVal
-                #     if abs(newVal - self.affiliations[i][j]) > maxDist:
-                #         maxDist = abs(newVal - self.affiliations[i][j])
-                #     self.affiliations[i][j] = newVal
         return maxDist
 
     def run(self):
@@ -301,7 +292,6 @@ class PlotArea(ttk.Frame):
 def main():
     """Function to call when module runs as main application."""
     mainApp = MainApp()
-    #fcmTest = FCM(mainApp.xData, mainApp.yData)
     mainApp.mainloop()
 
 if __name__ == '__main__':
