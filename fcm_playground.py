@@ -9,6 +9,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 
 import numpy as np
+import math
+
+#TODO standard/minMax values for truncErrChooser & contrastChooser
+#TODO fix the freezing under some conditions
 
 class MainApp(tk.Tk):
     """The controller of data and window contents."""
@@ -30,6 +34,7 @@ class MainApp(tk.Tk):
         self.sidepane.resetButton.config(command=self.resetData)
         self.sidepane.randDataButton.config(command=self.randomizeData)
         self.sidepane.numRandDataChooser.bind("<Return>", self.randomizeData)
+        self.sidepane.startFCMButton.config(command=self.runFCM)
 
         self.plotArea = PlotArea(self, padding="3 3 12 12")
         self.plotArea.grid(column=10, row=5, sticky="nsew")
@@ -108,6 +113,12 @@ class MainApp(tk.Tk):
         self.plotArea.redraw()
         self.sidepane.update()
 
+    def runFCM(self):
+        self.fcm = FCM(self.xData, self.yData, int(self.sidepane.numClusterChooser.get()), self.sidepane.contrast.get(), self.sidepane.truncErr.get())
+        self.fcm.run()
+        for x, y in zip(self.fcm.centerXCoords, self.fcm.centerYCoords):
+            print(x, y)
+
 class FCM():
     """Implements the Fuzzy-C-Means algorithm for 2D data. Uses no data
     encapsulation or anything fancy (like the very fancy act of checking
@@ -123,20 +134,85 @@ class FCM():
         self.numCluster = numCluster
         self.contrast = contrast
         self.truncErr = truncErr
-        self.membershipVals = np.random.rand(len(xData), numCluster)
-        for i in range(self.membershipVals.shape[0]):
-            self.membershipVals[i] = self.normalized(self.membershipVals[i])
-        #self.lastMembershipVals = np.zeros(self.membershipVals.shape)
+        self.affiliations = np.random.rand(len(xData), numCluster)
+        self.distances = np.empty((len(xData), numCluster))
+        for i in range(self.affiliations.shape[0]):
+            self.affiliations[i] = self.normalized(self.affiliations[i])
+        #self.lastMembershipVals = np.zeros(self.affiliations.shape)
 
     def normalized(self, vec):
-        """Normalizes values in a list so that the sum of all values equals ~1"""
+        """Normalizes values in a list/vector so that the sum of all values equals ~1"""
         s = vec.sum()
         return np.array([float(vec[j])/s for j in range(vec.shape[0])])
+     
+    def calcDistances(self):
+        """Calcuates the distances from all data points to each cluster center"""
+        for i in range(0, len(self.xData)):
+            for j in range(0, self.numCluster):
+                self.distances[i][j] = math.sqrt((self.xData[i] - self.centerXCoords[j])**2 + (self.yData[i] - self.centerYCoords[j])**2)
+     
+    def calcCenters(self):
+        """Calculates the locations of the cluster centers"""
+        self.centerXCoords = [0] * self.numCluster;
+        self.centerYCoords = [0] * self.numCluster;
+        
+        for j in range(0, self.numCluster):
+            denominator = 0.0
+            for i in range(0, len(self.xData)):
+                affiliationVal = self.affiliations[i][j]**self.contrast
+                denominator += affiliationVal
+                self.centerXCoords[j] += self.xData[i] * affiliationVal
+                self.centerYCoords[j] += self.yData[i] * affiliationVal
+            self.centerXCoords[j] /= denominator
+            self.centerYCoords[j] /= denominator
+     
+    def calcAffiliation(self):
+        """Recalculates the affiliation of each datapoint to each cluster by
+        the distance to their centers. Returns the maximum distance between
+        an old and the new value."""
+        maxDist = 0.0
+        exponent = 2 / (self.contrast - 1)
+        for i in range(len(self.xData)):
+            if min(self.distances[i]) == 0:
+                clusters = []
+                while min(self.distances[i]) == 0:
+                    index = list(self.distances[i]).index(0)
+                    clusters.append(index)
+                    self.distances[i][index] = 1
+                for j in range(0, len(self.affiliations[i])):
+                    if j in clusters:
+                        newVal = 1.0/len(clusters)
+                    else:
+                        newVal = 0
+                    if abs(newVal - self.affiliations[i][j]) > maxDist:
+                        maxDist = abs(newVal - self.affiliations[i][j])
+                    self.affiliations[i][j] = newVal
+            else:
+                newVec = [1/sum([(distj/dist)**exponent for dist in self.distances[i]]) for distj in self.distances[i]]
+                maxDistI = max(abs(newVec - self.affiliations[i]))
+                if maxDistI > maxDist:
+                    maxDist = maxDistI
+                self.distances[i] = newVec
+                # for j in range(0, len(self.affiliations[i])):
+                #     newVal = 0
+                #     for dist in self.distances[i]:
+                #         newVal += (self.distances[i][j]/dist)**exponent
+                #     newVal = 1/newVal
+                #     if abs(newVal - self.affiliations[i][j]) > maxDist:
+                #         maxDist = abs(newVal - self.affiliations[i][j])
+                #     self.affiliations[i][j] = newVal
+        return maxDist
+
+    def run(self):
+        while True:
+            self.calcCenters()
+            self.calcDistances()
+            if self.calcAffiliation() < self.truncErr:
+                break
+        return self.centerXCoords, self.centerYCoords
 
 class Sidepane(ttk.Frame):
-    """Contains all the buttons whithout any
-    functionality.
-    """
+    """Contains all the buttons without any functionality."""
     def __init__(self, master, *args, **kwargs):
         """Build the interface."""
         self.master = master
@@ -174,7 +250,7 @@ class Sidepane(ttk.Frame):
         contrastDesc = ttk.Label(self, text="Set cluster contrast variable:")
         contrastDesc.grid(column=5, row=24, sticky="nsew")
         self.contrast = tk.DoubleVar()
-        contrastChooser = ttk.Scale(self, from_=1, to=1000, variable=self.contrast)
+        contrastChooser = ttk.Scale(self, from_=1.01, to=1000, variable=self.contrast)
         contrastChooser.grid(column=5, row=26, sticky="nsew")
         contrastDisplay = ttk.Label(self, textvariable=self.contrast, width=5)
         contrastDisplay.grid(column=10, row = 26, sticky="w")
