@@ -13,6 +13,7 @@ import math
 
 #TODO standard/minMax values for truncErrChooser & contrastChooser
 #TODO fix the freezing under some conditions
+#TODO visualize clustering
 
 class MainApp(tk.Tk):
     """The controller of data and window contents."""
