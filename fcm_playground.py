@@ -13,8 +13,8 @@ import math
 
 #TODO add time measurement
 
-RGBA_VALS = [[0.118, 0.565, 1.000, 1], [1.000, 0.000, 0.000, 1], [0.000, 0.000, 1.000, 1], [0.000, 1.000, 0.000, 1],
-             [1.000, 0.647, 0.000, 1], [1.000, 0.078, 0.576, 1], [1.000, 1.000, 0.000, 1], [1.000, 0.000, 1.000, 1],
+RGBA_VALS = [[0.000, 0.000, 1.000, 1], [1.000, 0.000, 0.000, 1], [0.000, 1.000, 0.000, 1], [1.000, 0.647, 0.000, 1],
+             [0.118, 0.565, 1.000, 1], [1.000, 0.078, 0.576, 1], [1.000, 1.000, 0.000, 1], [1.000, 0.000, 1.000, 1],
              [0.502, 0.000, 0.502, 1], [0.647, 0.165, 0.165, 1], [0.251, 0.878, 0.816, 1], [0.804, 0.361, 0.361, 1],
              [0.741, 0.718, 0.420, 1], [0.000, 0.392, 0.000, 1], [0.690, 0.878, 0.902, 1], [0.502, 0.000, 0.000, 1]]
 
@@ -26,8 +26,17 @@ class MainApp(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
         self.title("Isodata Fuzzy-C-Means playground")
 
-        self.xData = list(np.random.rand(50))
-        self.yData = list(np.random.rand(50))
+        #self.xData = list(np.random.rand(50))
+        #self.yData = list(np.random.rand(50))
+        self.filePath = ""
+        try:
+            self.filePath = "8clusterss.txt"
+            self.xData, self.yData = np.loadtxt("two_clusters.txt").tolist()
+        except FileNotFoundError:
+            print("Could not find '8clusters.txt', will start with empty field!")
+            self.xData = []
+            self.yData = []
+
         self.colors = [RGBA_VALS[0]]
         self.centerXCoords = []
         self.centerYCoords = []
@@ -312,7 +321,7 @@ class PlotArea(ttk.Frame):
         """Update shown graph after master's xData, yData changed."""
         self.subplot.clear()
         if not self.master.affiliations.size:
-            self.subplot.scatter(self.master.xData, self.master.yData, c='#1e90ff', cmap=None, lw=0.2, picker=3, s=75)
+            self.subplot.scatter(self.master.xData, self.master.yData, c='blue', cmap=None, lw=0.2, picker=3, s=75)
         else:
             for rgbMat in self.master.colors:
                 self.subplot.scatter(self.master.xData, self.master.yData, c=rgbMat, lw=0.2, picker=3, s=75)
