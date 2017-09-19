@@ -11,7 +11,6 @@ from matplotlib.figure import Figure
 import numpy as np
 import math
 
-#TODO standard/minMax values for truncErrChooser & contrastChooser
 #TODO visualize clustering
 
 class MainApp(tk.Tk):
@@ -248,14 +247,16 @@ class Sidepane(ttk.Frame):
         self.contrast = tk.DoubleVar()
         contrastChooser = ttk.Scale(self, from_=1.01, to=100, variable=self.contrast)
         contrastChooser.grid(column=5, row=26, sticky="nsew")
+        contrastChooser.set(2)
         contrastDisplay = ttk.Label(self, textvariable=self.contrast, width=5)
         contrastDisplay.grid(column=10, row = 26, sticky="w")
 
         truncErrDesc = ttk.Label(self, text="Set truncation error:")
         truncErrDesc.grid(column=5, row=30, sticky="nsew")
         self.truncErr = tk.DoubleVar()
-        truncErrChooser = ttk.Scale(self, to=0.7, variable=self.truncErr)
+        truncErrChooser = ttk.Scale(self, from_=0.0001, to=0.3, variable=self.truncErr)
         truncErrChooser.grid(column=5, row=31, sticky="nsew")
+        truncErrChooser.set(0.01)
         truncErrDisplay = ttk.Label(self, textvariable=self.truncErr, width=5)
         truncErrDisplay.grid(column=10, row = 31, sticky="w")
 
