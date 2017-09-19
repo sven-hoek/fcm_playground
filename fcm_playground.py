@@ -12,7 +12,6 @@ import numpy as np
 import math
 
 #TODO standard/minMax values for truncErrChooser & contrastChooser
-#TODO fix the freezing under some conditions
 #TODO visualize clustering
 
 class MainApp(tk.Tk):
@@ -192,7 +191,7 @@ class FCM():
                 maxDistI = max(abs(newVec - self.affiliations[i]))
                 if maxDistI > maxDist:
                     maxDist = maxDistI
-                self.distances[i] = newVec
+                self.affiliations[i] = newVec
         return maxDist
 
     def run(self):
@@ -242,7 +241,7 @@ class Sidepane(ttk.Frame):
         contrastDesc = ttk.Label(self, text="Set cluster contrast variable:")
         contrastDesc.grid(column=5, row=24, sticky="nsew")
         self.contrast = tk.DoubleVar()
-        contrastChooser = ttk.Scale(self, from_=1.01, to=1000, variable=self.contrast)
+        contrastChooser = ttk.Scale(self, from_=1.01, to=100, variable=self.contrast)
         contrastChooser.grid(column=5, row=26, sticky="nsew")
         contrastDisplay = ttk.Label(self, textvariable=self.contrast, width=5)
         contrastDisplay.grid(column=10, row = 26, sticky="w")
@@ -283,7 +282,8 @@ class PlotArea(ttk.Frame):
     def redraw(self):
         """Update shown graph after master's xData, yData changed."""
         self.subplot.clear()
-        self.plot = self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5, picker=3)
+        self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5, picker=3)
+        #self.subplot.scatter([0.5], [0.5], color='r', marker='^', alpha = 0.8, s=100)
         if (not self.master.xData or not self.master.yData or
             (max(self.master.xData) <= 1 and max(self.master.yData) <= 1)):
             self.subplot.axis([0, 1, 0, 1])
@@ -293,6 +293,25 @@ def main():
     """Function to call when module runs as main application."""
     mainApp = MainApp()
     mainApp.mainloop()
+
+def FCM_test():
+	'''FCM test function to compare computed values to manually calculated ones
+    No assertion stuff because of different truncation errors and laziness'''
+	xData = [1, 2, 2]
+	yData = [3, 1, 3]
+	fcm = FCM(xData, yData, 2, 2, 0.1)
+	fcm.affiliations = np.array([[0.75, 0.25], [0.25, 0.75], [0.4, 0.6]])
+	fcm.calcCenters()
+	print("Center xCoords:	")
+	print(fcm.centerXCoords)
+	print("Center yCoords:	")
+	print(fcm.centerYCoords)
+	fcm.calcDistances()
+	print("Distances:")
+	print(fcm.distances)
+	print("Max dist to last affiliations: " + str(fcm.calcAffiliation()))
+	print("Affiliations:")
+	print(fcm.affiliations)
 
 if __name__ == '__main__':
     main()
