@@ -11,7 +11,12 @@ from matplotlib.figure import Figure
 import numpy as np
 import math
 
-#TODO visualize clustering
+#TODO add time measurement
+
+RGBA_VALS = [[0.118, 0.565, 1.000, 1], [1.000, 0.000, 0.000, 1], [0.000, 0.000, 1.000, 1], [0.000, 1.000, 0.000, 1],
+             [1.000, 0.647, 0.000, 1], [1.000, 0.078, 0.576, 1], [1.000, 1.000, 0.000, 1], [1.000, 0.000, 1.000, 1],
+             [0.502, 0.000, 0.502, 1], [0.647, 0.165, 0.165, 1], [0.251, 0.878, 0.816, 1], [0.804, 0.361, 0.361, 1],
+             [0.741, 0.718, 0.420, 1], [0.000, 0.392, 0.000, 1], [0.690, 0.878, 0.902, 1], [0.502, 0.000, 0.000, 1]]
 
 class MainApp(tk.Tk):
     """The controller of data and window contents."""
@@ -23,9 +28,10 @@ class MainApp(tk.Tk):
 
         self.xData = list(np.random.rand(50))
         self.yData = list(np.random.rand(50))
+        self.colors = [RGBA_VALS[0]]
         self.centerXCoords = []
         self.centerYCoords = []
-        self.affiliations = []
+        self.affiliations = np.array([])
         self.filePath = ""
 
         self.sidepane = Sidepane(self, padding="3 3 12 12")
@@ -69,6 +75,7 @@ class MainApp(tk.Tk):
         """
         self.filePath = tk.filedialog.askopenfilename(initialdir=self.filePath, parent=self)
         self.xData, self.yData = np.loadtxt(self.filePath).tolist()
+        self.affiliations = np.array([])
         self.plotArea.redraw()
         self.sidepane.update()
 
@@ -80,6 +87,7 @@ class MainApp(tk.Tk):
             event.ydata is not None):
             self.xData.append(event.xdata)
             self.yData.append(event.ydata)
+            self.affiliations = np.array([])
             self.plotArea.redraw()
             self.sidepane.update()
 
@@ -94,6 +102,8 @@ class MainApp(tk.Tk):
             index = distances.index(min(distances))
             del self.xData[index]
             del self.yData[index]
+            self.affiliations = np.array([])
+            self.colors = [RGBA_VALS[0]]
             self.plotArea.redraw()
             self.sidepane.update()
 
@@ -101,6 +111,8 @@ class MainApp(tk.Tk):
         """Initializes xData, yData with empty lists and redraws the plot."""
         self.xData = []
         self.yData = []
+        self.affiliations = np.array([])
+        self.colors = [RGBA_VALS[0]]
         self.plotArea.redraw()
         self.sidepane.update()
 
@@ -112,15 +124,26 @@ class MainApp(tk.Tk):
         """
         self.xData = list(np.random.rand(min(self.sidepane.numRandData.get(), 10000)))
         self.yData = list(np.random.rand(min(self.sidepane.numRandData.get(), 10000)))
+        self.affiliations = np.array([])
+        self.colors = [RGBA_VALS[0]]
         self.plotArea.redraw()
         self.sidepane.update()
 
     def runFCM(self):
         self.fcm = FCM(self.xData, self.yData, int(self.sidepane.numClusterChooser.get()), self.sidepane.contrast.get(), self.sidepane.truncErr.get())
         self.fcm.run()
+
         self.centerXCoords = self.fcm.centerXCoords
         self.centerYCoords = self.fcm.centerYCoords
         self.affiliations = self.fcm.affiliations
+
+        '''For each data point will exist numCluster RGBA values, RGB belongs to a cluster,
+        and the alpha value is the affiliation to this cluster.'''
+        self.colors = np.empty((self.fcm.numCluster, len(self.xData), 4))
+        for j in range(self.fcm.numCluster):
+            self.colors[j] = np.array([RGBA_VALS[j]] * len(self.xData))
+            for i in range(len(self.xData)):
+                self.colors[j][i][3] = self.affiliations[i][j]
         self.plotArea.redraw()
 
 class FCM():
@@ -288,10 +311,16 @@ class PlotArea(ttk.Frame):
     def redraw(self):
         """Update shown graph after master's xData, yData changed."""
         self.subplot.clear()
-        self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5, picker=3)
-        self.subplot.scatter(self.master.centerXCoords, self.master.centerYCoords, color='r', marker='x', alpha = 0.9, s=100)
+        if not self.master.affiliations.size:
+            self.subplot.scatter(self.master.xData, self.master.yData, c='#1e90ff', cmap=None, lw=0.2, picker=3, s=75)
+        else:
+            for rgbMat in self.master.colors:
+                self.subplot.scatter(self.master.xData, self.master.yData, c=rgbMat, lw=0.2, picker=3, s=75)
+            self.subplot.scatter(self.master.centerXCoords, self.master.centerYCoords, color='black', marker='x', alpha = 0.9, s=100, lw=3)
+
         if (not self.master.xData or not self.master.yData or
-            (max(self.master.xData) <= 1 and max(self.master.yData) <= 1)):
+            (max(self.master.xData) <= 1 and max(self.master.yData) <= 1 
+                and min(self.master.xData) >= 0 and min(self.master.yData) >= 0)):
             self.subplot.axis([0, 1, 0, 1])
         self.canvas.show()
 
