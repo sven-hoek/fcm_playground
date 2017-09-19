@@ -24,6 +24,9 @@ class MainApp(tk.Tk):
 
         self.xData = list(np.random.rand(50))
         self.yData = list(np.random.rand(50))
+        self.centerXCoords = []
+        self.centerYCoords = []
+        self.affiliations = []
         self.filePath = ""
 
         self.sidepane = Sidepane(self, padding="3 3 12 12")
@@ -116,8 +119,10 @@ class MainApp(tk.Tk):
     def runFCM(self):
         self.fcm = FCM(self.xData, self.yData, int(self.sidepane.numClusterChooser.get()), self.sidepane.contrast.get(), self.sidepane.truncErr.get())
         self.fcm.run()
-        for x, y in zip(self.fcm.centerXCoords, self.fcm.centerYCoords):
-            print(x, y)
+        self.centerXCoords = self.fcm.centerXCoords
+        self.centerYCoords = self.fcm.centerYCoords
+        self.affiliations = self.fcm.affiliations
+        self.plotArea.redraw()
 
 class FCM():
     """Implements the Fuzzy-C-Means algorithm for 2D data. Uses no data
@@ -283,7 +288,7 @@ class PlotArea(ttk.Frame):
         """Update shown graph after master's xData, yData changed."""
         self.subplot.clear()
         self.subplot.scatter(self.master.xData, self.master.yData, alpha=0.5, picker=3)
-        #self.subplot.scatter([0.5], [0.5], color='r', marker='^', alpha = 0.8, s=100)
+        self.subplot.scatter(self.master.centerXCoords, self.master.centerYCoords, color='r', marker='x', alpha = 0.9, s=100)
         if (not self.master.xData or not self.master.yData or
             (max(self.master.xData) <= 1 and max(self.master.yData) <= 1)):
             self.subplot.axis([0, 1, 0, 1])
