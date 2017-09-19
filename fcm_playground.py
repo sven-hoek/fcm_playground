@@ -268,7 +268,7 @@ class Sidepane(ttk.Frame):
         contrastDesc = ttk.Label(self, text="Set cluster contrast variable:")
         contrastDesc.grid(column=5, row=24, sticky="nsew")
         self.contrast = tk.DoubleVar()
-        contrastChooser = ttk.Scale(self, from_=1.01, to=100, variable=self.contrast)
+        contrastChooser = ttk.Scale(self, from_=1.01, to=15, variable=self.contrast)
         contrastChooser.grid(column=5, row=26, sticky="nsew")
         contrastChooser.set(2)
         contrastDisplay = ttk.Label(self, textvariable=self.contrast, width=5)
