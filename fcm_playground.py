@@ -30,7 +30,6 @@ class MainApp(tk.Tk):
         #self.yData = list(np.random.rand(50))
         self.filePath = ""
         try:
-            self.filePath = "8clusterss.txt"
             self.xData, self.yData = np.loadtxt("two_clusters.txt").tolist()
         except FileNotFoundError:
             print("Could not find '8clusters.txt', will start with empty field!")
@@ -120,6 +119,7 @@ class MainApp(tk.Tk):
         """Initializes xData, yData with empty lists and redraws the plot."""
         self.xData = []
         self.yData = []
+        self.filePath = ""
         self.affiliations = np.array([])
         self.colors = [RGBA_VALS[0]]
         self.plotArea.redraw()
@@ -133,6 +133,7 @@ class MainApp(tk.Tk):
         """
         self.xData = list(np.random.rand(min(self.sidepane.numRandData.get(), 10000)))
         self.yData = list(np.random.rand(min(self.sidepane.numRandData.get(), 10000)))
+        self.filePath = ""
         self.affiliations = np.array([])
         self.colors = [RGBA_VALS[0]]
         self.plotArea.redraw()
@@ -325,7 +326,7 @@ class PlotArea(ttk.Frame):
         else:
             for rgbMat in self.master.colors:
                 self.subplot.scatter(self.master.xData, self.master.yData, c=rgbMat, lw=0.2, picker=3, s=75)
-            self.subplot.scatter(self.master.centerXCoords, self.master.centerYCoords, color='black', marker='x', alpha = 0.9, s=100, lw=3)
+            self.subplot.scatter(self.master.centerXCoords, self.master.centerYCoords, edgecolor='black', color='white', marker='o', alpha = 1, s=150, lw=3)
 
         if (not self.master.xData or not self.master.yData or
             (max(self.master.xData) <= 1 and max(self.master.yData) <= 1 
