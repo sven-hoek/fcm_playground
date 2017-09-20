@@ -50,6 +50,7 @@ class MainApp(tk.Tk):
         self.sidepane.resetButton.config(command=self.resetData)
         self.sidepane.randDataButton.config(command=self.randomizeData)
         self.sidepane.numRandDataChooser.bind("<Return>", self.randomizeData)
+        self.sidepane.numClusterChooser.bind("<Return>", self.runFCM)
         self.sidepane.startFCMButton.config(command=self.runFCM)
 
         self.plotArea = PlotArea(self, padding="3 3 12 12")
@@ -139,7 +140,7 @@ class MainApp(tk.Tk):
         self.plotArea.redraw()
         self.sidepane.update()
 
-    def runFCM(self):
+    def runFCM(self, *args):
         self.fcm = FCM(self.xData, self.yData, int(self.sidepane.numClusterChooser.get()), self.sidepane.contrast.get(), self.sidepane.truncErr.get())
         self.fcm.run()
 
