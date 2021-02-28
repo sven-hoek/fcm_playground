@@ -5,7 +5,7 @@ from tkinter import ttk
 
 import matplotlib
 matplotlib.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 
 import numpy as np
@@ -314,9 +314,9 @@ class PlotArea(ttk.Frame):
         self.subplot = self.figure.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.figure, self)
         self.redraw()
-        self.canvas.show()
+        self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-        self.toolbar = NavigationToolbar2TkAgg(self.canvas, self)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self)
         self.toolbar.update()
         self.canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
@@ -334,7 +334,7 @@ class PlotArea(ttk.Frame):
             (max(self.master.xData) <= 1 and max(self.master.yData) <= 1 
                 and min(self.master.xData) >= 0 and min(self.master.yData) >= 0)):
             self.subplot.axis([0, 1, 0, 1])
-        self.canvas.show()
+        self.canvas.draw()
 
 def main():
     """Function to call when module runs as main application."""
